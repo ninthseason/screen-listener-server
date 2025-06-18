@@ -3,6 +3,11 @@ const passwd: { [key: string]: string } = {
 };
 
 Deno.serve(async (req) => {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "*",
+    "Access-Control-Allow-Headers": "*",
+  };
   if (req.method === "POST") {
     const authHeader = req.headers.get("authorization");
     const credentials = parseBasicAuth(authHeader);
@@ -42,7 +47,7 @@ Deno.serve(async (req) => {
       console.log(entry.key, entry.value);
     }
     return new Response(JSON.stringify(rs), {
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
   return new Response(null, { status: 415 });
