@@ -50,11 +50,11 @@ Deno.serve(async (req) => {
       const event = formData.get("event");
       if (event === "screen-on") {
         const kv = await Deno.openKv();
-        await kv.set(["user", "kl1nge5"], [true, Date.now()]);
+        await kv.set(["user", credentials.username], [true, Date.now()]);
         console.log(credentials.username, "screen-on");
       } else if (event === "screen-off") {
         const kv = await Deno.openKv();
-        await kv.set(["user", "kl1nge5"], [false, Date.now()]);
+        await kv.set(["user", credentials.username], [false, Date.now()]);
         console.log(credentials.username, "screen-off");
       } else {
         return new Response(null, { status: 415 });
