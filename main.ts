@@ -3,6 +3,32 @@ const passwd: { [key: string]: string } = {
 };
 
 Deno.serve(async (req) => {
+  const upgrade = req.headers.get("upgrade") || ""
+  if (upgrade.toLowerCase() === "websocket") {
+    const {socket, response} = Deno.upgradeWebSocket(req)
+    const kv = await Deno.openKv()
+    const all_keys: Deno.KvKey[] = []
+    socket.onopen = async () => {
+      for await (const entry of kv.list({ prefix: ["user"] })) {
+        all_keys.push(entry.key)
+      }
+      const stream = kv.watch(all_keys)
+      for await (const entries of stream) {
+        const rs: { [key: string]: [boolean, number] } = {};
+        for await (const entry of entries) {
+          rs[entry.key[1] as string] = entry.value as [boolean, number];
+        }
+        socket.send(JSON.stringify(rs))
+      }
+    }
+    socket.onmessage = (e) => {
+      if (e.data === "ping") {
+        socket.send("pong");
+      }
+    };
+    return response;
+  }
+
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "*",
@@ -44,7 +70,7 @@ Deno.serve(async (req) => {
     const rs: { [key: string]: boolean } = {};
     for await (const entry of kv.list({ prefix: ["user"] })) {
       rs[entry.key[1] as string] = entry.value as boolean;
-      console.log(entry.key, entry.value);
+      // console.log(entry.key, entry.value);
     }
     return new Response(JSON.stringify(rs), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
